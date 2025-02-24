@@ -416,33 +416,21 @@ void imgui_md::render_text(const char* str, const char* str_end)
 {
 	const float scale = ImGui::GetIO().FontGlobalScale;
 	const ImGuiStyle& s = ImGui::GetStyle();
-	bool is_lf = false;
+	bool is_line_finished = false;
 
 	while (!m_is_image && str < str_end) {
 
 		const char* te = str_end;
+		float wl = ImGui::GetContentRegionAvail().x;
+		te = ImGui::GetFont()->CalcWordWrapPositionA(scale, str, str_end, wl);
 
-		if (!m_is_table_header) {
+		if (te == str)++te;
 
-			float wl = ImGui::GetContentRegionAvail().x;
-
-			if (m_is_table_body) {
-				wl = (m_table_next_column < m_table_col_pos.size() ?
-					m_table_col_pos[m_table_next_column] : m_table_last_pos.x);
-				wl -= ImGui::GetCursorPosX();
-			}
-
-			te = ImGui::GetFont()->CalcWordWrapPositionA(
-				scale, str, str_end, wl);
-
-			if (te == str)++te;
-		}
-
-		
-		ImGui::TextUnformatted(str, te);
+		std::string text(str,te);
+		ImGui::Text("%s", text.c_str());
 
 		if (te > str && *(te - 1) == '\n') {
-			is_lf = true;
+			is_line_finished = true;
 		}
 		
 		if (!m_href.empty()) {
@@ -473,7 +461,8 @@ void imgui_md::render_text(const char* str, const char* str_end)
 		while (str < str_end && *str == ' ')++str;
 	}
 
-	if (!is_lf)ImGui::SameLine(0.0f, 0.0f);
+	if (!m_is_table_body && !m_is_table_header && !is_line_finished)
+		ImGui::SameLine(0.0f, 0.0f);
 }
 
 
